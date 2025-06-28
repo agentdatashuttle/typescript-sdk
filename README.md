@@ -1,3 +1,5 @@
+<!-- TODO -->
+
 # Agent Data Shuttle (ADS) - NodeJS TypeScript SDK
 
 #### Agent Data Shuttle (ADS) — _The framework that makes your AI agents autonomously react to external events._
@@ -92,21 +94,10 @@ All combinations are possible:
 
 ---
 
-<!-- TODO -->
-
 ## Installation
 
 ```sh
-npm install ads_js
-```
-
-Or clone this repository and build locally:
-
-```sh
-git clone <this-repo-url>
-cd ads_js
-npm install
-npm run build
+npm install @agentdatashuttle/adsjs
 ```
 
 ---
@@ -243,13 +234,17 @@ All core types are defined in [`types/types.ts`](src/types/types.ts):
 
 ---
 
-<!-- TODO add Env vars possible for LOG_LEVEL -->
-
 ## Logging
 
-Logging is handled via Winston. You can create custom loggers using:
+Logging level can be configured via the `LOG_LEVEL` environment variable with the following values
 
-- [`createLogger`](src/utils/logger.ts)
+| Level | Description                                     |
+| ----- | ----------------------------------------------- |
+| error | Critical errors that may cause the app to crash |
+| warn  | Warnings about potentially harmful situations   |
+| info  | General operational information                 |
+| debug | Debug-level logs for development                |
+| silly | Extremely verbose logs, lowest priority         |
 
 ---
 
