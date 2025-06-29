@@ -107,80 +107,148 @@ All combinations are possible:
 
 ### 1. ADS Publisher
 
-Publish events to the ADS system.  
-See [`examples/nodejs/sample_publisher/index.ts`](examples/nodejs/sample_publisher/index.ts) for a working example.
+Publish events to ADS subscribers.  
+See [`examples/nodejs/sample_publisher/index.ts`](examples/nodejs/sample_publisher/index.ts) for a working example. <!-- TODO: Add link to examples repo -->
 
 ```typescript
-import { publisher, types } from "ads_js";
+import { types, publisher } from "@agentdatashuttle/adsjs";
 
-const publisherParams: types.ADSRabbitMQClientParams = {
-  host: "localhost",
-  port: 5672,
-  username: "guest",
-  password: "guest",
-};
+(() => {
+  return new Promise(async (resolve, reject) => {
+    const clientParams: types.ADSRabbitMQClientParams = {
+      host: process.env.ADS_HOST || "localhost",
+      username: process.env.ADS_USERNAME || "ads_user",
+      password: process.env.ADS_PASSWORD || "ads_password",
+      port: parseInt(process.env.ADS_PORT || "5672"),
+    };
 
-const adsPublisher = new publisher.ADSPublisher("MyPublisher", publisherParams);
+    const adsPublisher = new publisher.ADSPublisher(
+      "UptimeKumaEvents",
+      clientParams
+    );
 
-const eventPayload: types.ADSDataPayload = {
-  event_name: "new_file_uploaded",
-  event_description: "A new file was uploaded.",
-  event_data: { file_name: "report.pdf", uploaded_by: "user_1" },
-};
+    const payload: types.ADSDataPayload = {
+      event_name: "container_down",
+      event_description: "the argocd service is down",
+      event_data: {
+        timestamp: "23-04-2004",
+        memory_captured_last: "2042Mi",
+      },
+    };
 
-await adsPublisher.publishEvent(eventPayload);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await adsPublisher.publishEvent(payload);
+    console.log("Event published successfully.");
+    resolve(true);
+  });
+})();
 ```
 
-**Tip:** Customize the event payload to match your use case, as shown in the sample publisher.
+**Tip:** Customize the event payload to match your use case, as shown in the sample publisher and make sure to add a detailed `event_description` and as much detail as required in the `event_data` object for the destination AI Agent to take remediation actions with greater confidence.
 
 ---
 
 ### 2. ADS Subscriber
 
 Subscribe to events and invoke your AI agent.  
-See [`examples/nodejs/sample_subscriber/src/index.ts`](examples/nodejs/sample_subscriber/src/index.ts) for a working example.
+See [`examples/nodejs/sample_subscriber/src/index.ts`](examples/nodejs/sample_subscriber/src/index.ts) for a working example. <!-- TODO: Add link to examples repo -->
 
 ```typescript
-import { subscriber, dataconnector, types } from "ads_js";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { HumanMessage } from "@langchain/core/messages";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import seeK8sLogsTool from "./tools/see_k8s_logs_tool";
+import {
+  types,
+  dataconnector,
+  subscriber,
+  notifications,
+} from "@agentdatashuttle/adsjs";
 
-// Define your agent callback (sync or async)
-const agentCallback = (prompt: string, payload: types.ADSDataPayload) => {
-  // Call your AI agent here
-  return "Agent processed event: " + prompt;
-};
+import dotenv from "dotenv";
+import { renderTextDescriptionAndArgs } from "./utils/render";
+dotenv.config();
 
-const bridgeParams: types.ADSBridgeClientParams = {
-  connection_string: "http://localhost:3000",
-  path_prefix: "/ads_bridge",
-};
+(async () => {
+  // Define the tools for the agent to use
+  const agentTools = [toolA, toolB, seeK8sLogsTool];
+  const llm = new ChatGoogleGenerativeAI({ model: "gemini-2.0-flash" });
 
-const dataConnector = new dataconnector.ADSDataConnector(
-  "MyConnector",
-  bridgeParams
-);
+  // Initialize memory to persist state between graph runs
+  const agent = createReactAgent({
+    llm: llm,
+    tools: agentTools,
+  });
 
-const redisParams: types.RedisParams = { host: "localhost", port: 6379 };
+  // Define a callback function to be triggered when ADS events are received
+  const invoke_agent = async (
+    prompt: string,
+    payload: types.ADSDataPayload
+  ) => {
+    console.log("The payload was:", payload);
 
-// Dummy LLM instance (replace with your own)
-const llm = {} as BaseChatModel;
+    if (payload.event_name === "container_up") {
+      return "NO INVOCATION FOR THIS EVENT - CONTAINER UP";
+    }
 
-const adsSubscriber = new subscriber.ADSSubscriber(
-  agentCallback, // or null if using async
-  null, // or your async callback
-  llm,
-  "This agent processes uploaded files.",
-  [dataConnector],
-  redisParams
-);
+    const response = await agent.invoke({
+      messages: [new HumanMessage(prompt)],
+    });
+    return response.messages[response.messages.length - 1].content as string;
+  };
 
-await adsSubscriber.start();
+  //   # ---- ADS Subscriber ----
+  // # Step 1: Create an ADSDataConnector with an ADSClientParams for each data source that should trigger the agent.
+  // # Example: ADSDataConnector for Uptime Kuma events
+  // # Note: ADSDataConnectors always connect with respective ADSBridges
+  const adsBridgeClientParams: types.ADSBridgeClientParams = {
+    connection_string: "http://localhost:9999",
+    path_prefix: "/ads_bridge",
+  };
+
+  const dataConnectorOne = new dataconnector.ADSDataConnector(
+    "UptimeKumaConnector",
+    adsBridgeClientParams
+  );
+
+  // # Step 2: Create an ADSSubscriber with the agent executor, llm, and data connectors and redisParams for job processing
+  // # The ADSSubscriber will listen for events from the data connectors, queue them up and invoke the agent executor.
+
+  const redisParams: types.RedisParams = { host: "localhost", port: 6379 };
+  const agentDescription = renderTextDescriptionAndArgs(agentTools);
+
+  // # Step 3: Create NotificationChannels if needed
+  const emailChannel = new notifications.EmailNotificationChannel(
+    agentDescription,
+    "<your_smtp_host>",
+    465,
+    "<from_address>",
+    process.env.EMAIL_SMTP_PASSWORD || "",
+    "<from_address>",
+    "<to_address>"
+  );
+
+  const slackChannel = new notifications.SlackNotificationChannel(
+    agentDescription,
+    process.env.SLACK_BOT_TOKEN || "",
+    "#ads-notifications"
+  );
+
+  // # Step 4: Create the ADSSubscriber instance with the agent executor, llm, agent description, data connectors, redisParams, and notification channels.
+  const adsSubscriber = new subscriber.ADSSubscriber(
+    null,
+    invoke_agent,
+    llm,
+    agentDescription,
+    [dataConnectorOne, dataConnectorTwo],
+    redisParams,
+    [emailChannel, slackChannel]
+  );
+
+  // # Step 5: Start the ADSSubscriber to listen for events and invoke the agent executor.
+  await adsSubscriber.start();
+})();
 ```
-
-**Tip:**
-
-- Use `.env` files for configuration, as shown in [`sample_subscriber/.env.example`](examples/nodejs/sample_subscriber/.env.example).
-- Extend your subscriber with custom tools, as in [`sample_subscriber/src/tools/`](examples/nodejs/sample_subscriber/src/tools/), to interact with external systems (e.g., Kubernetes clusters).
 
 ---
 
@@ -220,8 +288,6 @@ Pass these channels to the `ADSSubscriber` to enable notifications.
 
 ---
 
-<!-- TODO -->
-
 ## Types
 
 All core types are defined in [`types/types.ts`](src/types/types.ts):
@@ -252,10 +318,10 @@ Logging level can be configured via the `LOG_LEVEL` environment variable with th
 ## Example Projects
 
 - **Sample Publisher:**  
-  [`examples/nodejs/sample_publisher/`](examples/nodejs/sample_publisher/) — Minimal event publisher.
+  [`examples/nodejs/sample_publisher/`](examples/nodejs/sample_publisher/) — Minimal ADS event publisher.
 
 - **Sample Subscriber:**  
-  [`examples/nodejs/sample_subscriber/`](examples/nodejs/sample_subscriber/) — Subscriber with modular tools (e.g., Kubernetes resource listing, log viewing).  
+  [`examples/nodejs/sample_subscriber/`](examples/nodejs/sample_subscriber/) — ADS Subscriber with modular tools (e.g., Kubernetes resource listing, log viewing).  
   Uses `.env` files for configuration and demonstrates tool integration in [`src/tools/`](examples/nodejs/sample_subscriber/src/tools/).
 
 ---
