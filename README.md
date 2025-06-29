@@ -8,13 +8,20 @@
 
 ---
 
+## Installation
+
+```sh
+npm install @agentdatashuttle/adsjs
+```
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Usage](#usage)
   - [ADS Publisher](#1-ads-publisher)
   - [ADS Subscriber](#2-ads-subscriber)
@@ -91,14 +98,6 @@ All combinations are possible:
 - **Email/Slack credentials** (if using notification channels)
 - **Redis** (for queuing ADS events and prevent overwhelmed agent invocations)
 - **AI Agent or LLM** (for integrating with an AI model and trigger agentic workflows)
-
----
-
-## Installation
-
-```sh
-npm install @agentdatashuttle/adsjs
-```
 
 ---
 

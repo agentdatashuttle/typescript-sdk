@@ -1,6 +1,6 @@
 {
   "name": "@agentdatashuttle/adsjs",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "commonjs",
   "description": "Agent Data Shuttle - JavaScript SDK",
   "main": "dist/index.js",
