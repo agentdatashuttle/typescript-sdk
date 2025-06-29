@@ -29,7 +29,6 @@ npm install @agentdatashuttle/adsjs
 - [Notification Channels](#notification-channels)
 - [Types](#types)
 - [Logging](#logging)
-- [Example Projects](#example-projects)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
@@ -107,8 +106,7 @@ All combinations are possible:
 
 ### 1. ADS Publisher
 
-Publish events to ADS subscribers.  
-See [`examples/nodejs/sample_publisher/index.ts`](examples/nodejs/sample_publisher/index.ts) for a working example. <!-- TODO: Add link to examples repo -->
+Publish events to ADS subscribers.
 
 ```typescript
 import { types, publisher } from "@agentdatashuttle/adsjs";
@@ -150,8 +148,7 @@ import { types, publisher } from "@agentdatashuttle/adsjs";
 
 ### 2. ADS Subscriber
 
-Subscribe to events and invoke your AI agent.  
-See [`examples/nodejs/sample_subscriber/src/index.ts`](examples/nodejs/sample_subscriber/src/index.ts) for a working example. <!-- TODO: Add link to examples repo -->
+Subscribe to events and invoke your AI agent.
 
 ```typescript
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -265,7 +262,7 @@ Use the [`n8n.subscriber.ADSSubscribern8n`](src/n8n/subscriber.ts) class to inte
 Send notifications via Email or Slack when events are processed:
 
 ```typescript
-import { notifications } from "ads_js";
+import { notifications } from "@agentdatashuttle/adsjs";
 
 const emailChannel = new notifications.EmailNotificationChannel(
   "Agent description",
@@ -310,19 +307,6 @@ Logging level can be configured via the `LOG_LEVEL` environment variable with th
 | info  | General operational information                 |
 | debug | Debug-level logs for development                |
 | silly | Extremely verbose logs, lowest priority         |
-
----
-
-<!-- TODO -->
-
-## Example Projects
-
-- **Sample Publisher:**  
-  [`examples/nodejs/sample_publisher/`](examples/nodejs/sample_publisher/) — Minimal ADS event publisher.
-
-- **Sample Subscriber:**  
-  [`examples/nodejs/sample_subscriber/`](examples/nodejs/sample_subscriber/) — ADS Subscriber with modular tools (e.g., Kubernetes resource listing, log viewing).  
-  Uses `.env` files for configuration and demonstrates tool integration in [`src/tools/`](examples/nodejs/sample_subscriber/src/tools/).
 
 ---
 
