@@ -72,11 +72,22 @@ export class ADSBridgeClient {
   socketIoClient: Socket;
 
   constructor(bridgeClientParams: ADSBridgeClientParams) {
+    if (
+      !bridgeClientParams.ads_subscribers_pool_id ||
+      bridgeClientParams.ads_subscribers_pool_id.trim() === ""
+    ) {
+      throw new Error("'ads_subscribers_pool_id' cannot be empty or undefined");
+    }
+
     this.bridgeClientParams = bridgeClientParams;
     this.socketIoClient = io(bridgeClientParams.connection_string, {
       autoConnect: false,
       withCredentials: true,
       retries: 5,
+      auth: {
+        ads_subscribers_pool_id:
+          this.bridgeClientParams.ads_subscribers_pool_id,
+      },
       path: this.bridgeClientParams.path_prefix
         ? this.bridgeClientParams.path_prefix != "/"
           ? `${this.bridgeClientParams.path_prefix}/socket.io`

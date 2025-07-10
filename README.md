@@ -201,6 +201,7 @@ dotenv.config();
   const adsBridgeClientParams: types.ADSBridgeClientParams = {
     connection_string: "http://localhost:9999",
     path_prefix: "/ads_bridge",
+    ads_subscribers_pool_id = "<a_random_uuid>", // Replace with your actual pool ID to group horizontally scaled replicas of ADS Subscribers
   };
 
   const dataConnectorOne = new dataconnector.ADSDataConnector(

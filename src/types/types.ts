@@ -14,6 +14,7 @@ export interface ADSRabbitMQClientParams {
 export interface ADSBridgeClientParams {
   connection_string: string;
   path_prefix: string; // Used when ADS Bridge behind reverse proxy - defaults to '/ads_bridge'
+  ads_subscribers_pool_id: string; // Pool ID to group horizontally scaled replicas of ADS Subscribers to ensure only one subscriber receives the event
 }
 
 export interface RedisParams {
