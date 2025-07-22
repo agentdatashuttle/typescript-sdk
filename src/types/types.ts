@@ -20,4 +20,6 @@ export interface ADSBridgeClientParams {
 export interface RedisParams {
   host: string;
   port: number;
+  username?: string;
+  password?: string;
 }

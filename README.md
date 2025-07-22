@@ -1,10 +1,10 @@
-<!-- TODO -->
-
 # Agent Data Shuttle (ADS) - NodeJS TypeScript SDK
 
 #### Agent Data Shuttle (ADS) — _The framework that makes your AI agents autonomously react to external events._
 
-> **ADS NodeJS SDK** enables you to build ADS Publishers and Subscribers in Node.js/TypeScript, allowing your AI agents to react to external events in real time. It is interoperable with other ADS SDKs (Python, n8n) and supports all publisher-subscriber combinations.
+> **ADS Node.js SDK** enables you to build ADS Publishers and Subscribers in Node.js/TypeScript, allowing your AI agents to react to external events in real time.
+
+> It is interoperable with other ADS SDKs (Python, n8n) and supports all publisher-subscriber combinations.
 
 ---
 
@@ -25,7 +25,6 @@ npm install @agentdatashuttle/adsjs
 - [Usage](#usage)
   - [ADS Publisher](#1-ads-publisher)
   - [ADS Subscriber](#2-ads-subscriber)
-  - [n8n Integration](#3-n8n-integration)
 - [Notification Channels](#notification-channels)
 - [Types](#types)
 - [Logging](#logging)
@@ -37,9 +36,11 @@ npm install @agentdatashuttle/adsjs
 
 ## Overview
 
-Agent Data Shuttle (ADS) is a framework for connecting event sources (publishers) and AI agents (subscribers) across platforms and languages. This SDK lets you build Node.js/TypeScript publishers and subscribers that can interoperate with Python SDKs and Publishers/Subscribers built with n8n.
+Agent Data Shuttle (ADS) is a framework for connecting event sources (publishers) and AI agents (subscribers) across platforms and languages.
 
-- **Publishers** send events (e.g., file uploads, system alerts, support tickets raised, CRM events, etc...).
+This SDK lets you build Node.js/TypeScript publishers and subscribers that can interoperate with Python SDKs and Publishers/Subscribers built with n8n.
+
+- **Publishers** send events (e.g., file uploads, system alerts, support tickets raised, CRM events, payment processor events, etc...).
 - **Subscribers** (AI agents or workflows) receive and react to those events to take appropriate measures like humans would.
 
 All combinations are possible:
@@ -60,8 +61,9 @@ All combinations are possible:
 
 - **Event-Driven Architecture:** Seamlessly publish and subscribe to events between systems and agents.
 - **Publisher & Subscriber SDKs:** Build both event sources (publishers) and event consumers (subscribers) in Node.js.
-- **n8n Integration:** Out-of-the-box support for n8n workflows as subscribers.
-- **Notification Channels:** Send notifications via Email or Slack when agents process events. (more channels will soon be supported)
+- **n8n Integration:** Out-of-the-box support for n8n workflows as subscribers or publishers.
+- **Notification Channels:** Send notifications via Email or Slack when agents process events.
+  > More channels coming soon.
 - **Pluggable Connectors:** Easily connect an ADS Subscriber to multiple ADS Publishers hosted at different places via data connectors.
 - **Prompt Generation:** Automatically generate contextual prompts for AI agents based on event payloads and agent capabilities.
 - **TypeScript Support:** Strong typing for safer and more maintainable code.
@@ -76,7 +78,9 @@ All combinations are possible:
 - **Notification Channels:** Email/Slack notifications on event processing.
 - **Interoperability:** Mix NodeJS, Python, and n8n publishers/subscribers.
 
-![Architecture Diagram](https://raw.githubusercontent.com/your-org/your-repo/main/docs/architecture.png) <!-- TODO: Replace with your actual diagram if available -->
+> ![Before and After ADS](https://agentdatashuttle.knowyours.co/before-after-illustration.png)
+>
+> ![Architecture Diagram](https://agentdatashuttle.knowyours.co/architecture-diagram.png)
 
 ---
 
@@ -85,22 +89,38 @@ All combinations are possible:
 ### Prerequisites for ADS Publisher
 
 - **Node.js** (v16+ recommended)
-- **RabbitMQ** instance (for event queueing and secure event publishing)
-- **ADS Bridge** (for real-time event delivery via Socket.io).  
-  You must run the ADS Bridge service which would be the point of connection for subscribers.
-  More info at: [https://github.com/agentdatashuttle/ads-bridge](https://github.com/agentdatashuttle/ads-bridge)
-- **Redis** (for handling ADS event delivery to a large number of ADS Subscribers from ADS Bridge)
+
+- **RabbitMQ** instance
+
+  > For event queueing and secure event publishing
+
+- **ADS Bridge**
+
+  > For real-time event delivery via Socket.io
+  >
+  > You must run the ADS Bridge service which would be the point of connection for subscribers.
+  >
+  > More info at: [https://github.com/agentdatashuttle/ads-bridge](https://github.com/agentdatashuttle/ads-bridge)
+
+- **Redis**
+
+  > For handling ADS event delivery to a large number of ADS Subscribers from ADS Bridge
 
 ### Prerequisites for ADS Subscriber
 
 - **Node.js** (v16+ recommended)
-- **Email/Slack credentials** (if using notification channels)
-- **Redis** (for queuing ADS events and prevent overwhelmed agent invocations)
+
+- **Email/Slack credentials** (Optional)
+
+  > For using notification channels upon each autonomous agent invocation
+
+- **Redis**
+
+  > For queuing ADS events and prevent overwhelmed agent invocations
+
 - **AI Agent or LLM** (for integrating with an AI model and trigger agentic workflows)
 
 ---
-
-<!-- TODO -->
 
 ## Usage
 
@@ -113,36 +133,46 @@ import { types, publisher } from "@agentdatashuttle/adsjs";
 
 (() => {
   return new Promise(async (resolve, reject) => {
+    // Step 1: Create ADSRabbitMQClientParams
     const clientParams: types.ADSRabbitMQClientParams = {
-      host: process.env.ADS_HOST || "localhost",
-      username: process.env.ADS_USERNAME || "ads_user",
-      password: process.env.ADS_PASSWORD || "ads_password",
-      port: parseInt(process.env.ADS_PORT || "5672"),
+      host: process.env.RABBITMQ_HOST || "localhost",
+      username: process.env.RABBITMQ_USERNAME || "ads_user",
+      password: process.env.RABBITMQ_PASSWORD || "ads_password",
+      port: parseInt(process.env.RABBITMQ_PORT || "5672"),
     };
 
+    // Step 2: Create a ADSPublisher instance
+    // Example: ADSPublisher for Kubernetes Health monitoring system
     const adsPublisher = new publisher.ADSPublisher(
-      "UptimeKumaEvents",
+      "KubernetesMonitoring",
       clientParams
     );
 
+    // Step 3: Create a sample ADSDataPayload
     const payload: types.ADSDataPayload = {
-      event_name: "container_down",
-      event_description: "the argocd service is down",
+      event_name: "pod_killed",
+      event_description:
+        "Pod 'payment-service-233ch3' just got killed due to OOMKilled error",
       event_data: {
-        timestamp: "23-04-2004",
-        memory_captured_last: "2042Mi",
+        pod: "payment-service-233ch3",
+        recorded_memory_usage: "2042Mi",
+        limits: "2000Mi",
       },
     };
 
+    // Simulate some delay before publishing
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Publish the payload
     await adsPublisher.publishEvent(payload);
+
     console.log("Event published successfully.");
     resolve(true);
   });
 })();
 ```
 
-**Tip:** Customize the event payload to match your use case, as shown in the sample publisher and make sure to add a detailed `event_description` and as much detail as required in the `event_data` object for the destination AI Agent to take remediation actions with greater confidence.
+**Tip:** Customize the event payload to match your use case, as shown in the sample publisher and make sure to add a detailed `event_description` and as much detail as required in the `event_data` object for the destination AI Agent to take remediation actions with greater confidence and accuracy.
 
 ---
 
@@ -155,6 +185,10 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import seeK8sLogsTool from "./tools/see_k8s_logs_tool";
+import dotenv from "dotenv";
+import { renderTextDescriptionAndArgs } from "./utils/render";
+
+// Import ADS Subscriber and add ADS Data Connectors
 import {
   types,
   dataconnector,
@@ -162,8 +196,6 @@ import {
   notifications,
 } from "@agentdatashuttle/adsjs";
 
-import dotenv from "dotenv";
-import { renderTextDescriptionAndArgs } from "./utils/render";
 dotenv.config();
 
 (async () => {
@@ -171,57 +203,55 @@ dotenv.config();
   const agentTools = [toolA, toolB, seeK8sLogsTool];
   const llm = new ChatGoogleGenerativeAI({ model: "gemini-2.0-flash" });
 
-  // Initialize memory to persist state between graph runs
   const agent = createReactAgent({
     llm: llm,
     tools: agentTools,
   });
 
-  // Define a callback function to be triggered when ADS events are received
+  // Step 1: Define callback function for ADS Subscriber to invoke agent
   const invoke_agent = async (
     prompt: string,
     payload: types.ADSDataPayload
   ) => {
     console.log("The payload was:", payload);
 
+    // Filter specific events in/out as you desire
     if (payload.event_name === "container_up") {
       return "NO INVOCATION FOR THIS EVENT - CONTAINER UP";
     }
 
+    // Invoke your agent with the context enriched prompt generated by Agent Data Shuttle
     const response = await agent.invoke({
       messages: [new HumanMessage(prompt)],
     });
+
+    // Return final agent response - will be sent to all notification channels for later review
     return response.messages[response.messages.length - 1].content as string;
   };
 
-  //   # ---- ADS Subscriber ----
-  // # Step 1: Create an ADSDataConnector with an ADSClientParams for each data source that should trigger the agent.
-  // # Example: ADSDataConnector for Uptime Kuma events
-  // # Note: ADSDataConnectors always connect with respective ADSBridges
+  // Step 2: Define ADSBridgeClientParams and corresponding ADSDataConnector
   const adsBridgeClientParams: types.ADSBridgeClientParams = {
     connection_string: "http://localhost:9999",
     path_prefix: "/ads_bridge",
-    ads_subscribers_pool_id = "<a_random_uuid>", // Replace with your actual pool ID to group horizontally scaled replicas of ADS Subscribers
+    ads_subscribers_pool_id = "<a_random_uuid>", // Replace with your actual pool ID to group horizontally scaled replicas of ADS Subscribers - use https://agentdatashuttle.knowyours.co/pool-id-generator to make one if needed
   };
 
   const dataConnectorOne = new dataconnector.ADSDataConnector(
-    "UptimeKumaConnector",
+    "K8sMonitoringConnector",
     adsBridgeClientParams
   );
 
-  // # Step 2: Create an ADSSubscriber with the agent executor, llm, and data connectors and redisParams for job processing
-  // # The ADSSubscriber will listen for events from the data connectors, queue them up and invoke the agent executor.
-
   const redisParams: types.RedisParams = { host: "localhost", port: 6379 };
+
   const agentDescription = renderTextDescriptionAndArgs(agentTools);
 
-  // # Step 3: Create NotificationChannels if needed
+  // Step 3: Optionally, add notification channels
   const emailChannel = new notifications.EmailNotificationChannel(
     agentDescription,
-    "<your_smtp_host>",
-    465,
-    "<from_address>",
-    process.env.EMAIL_SMTP_PASSWORD || "",
+    "<smtp_host>",
+    "<smtp_port>",
+    "<smtp_username>",
+    "<smtp_password>",
     "<from_address>",
     "<to_address>"
   );
@@ -232,29 +262,22 @@ dotenv.config();
     "#ads-notifications"
   );
 
-  // # Step 4: Create the ADSSubscriber instance with the agent executor, llm, agent description, data connectors, redisParams, and notification channels.
+  // Step 4: Create the ADSSubscriber with the callback function, LLM, and Data Connectors.
+  // The ADSSubscriber will listen for events from all the data connectors and invoke the agent.
   const adsSubscriber = new subscriber.ADSSubscriber(
     null,
     invoke_agent,
     llm,
     agentDescription,
-    [dataConnectorOne, dataConnectorTwo],
+    [dataConnectorOne],
     redisParams,
     [emailChannel, slackChannel]
   );
 
-  // # Step 5: Start the ADSSubscriber to listen for events and invoke the agent executor.
+  // Step 5: Start the ADSSubscriber to listen for events and invoke the agent.
   await adsSubscriber.start();
 })();
 ```
-
----
-
-<!-- TODO Decide Removal -->
-
-### 3. n8n Integration
-
-Use the [`n8n.subscriber.ADSSubscribern8n`](src/n8n/subscriber.ts) class to integrate with n8n workflows.
 
 ---
 
@@ -266,19 +289,19 @@ Send notifications via Email or Slack when events are processed:
 import { notifications } from "@agentdatashuttle/adsjs";
 
 const emailChannel = new notifications.EmailNotificationChannel(
-  "Agent description",
-  "smtp.example.com",
-  587,
-  "smtp_user",
-  "smtp_pass",
+  "<agent_description>",
+  "<smtp_host>",
+  "<smtp_port>",
+  "<smtp_username>",
+  "<smtp_password>",
   "from@example.com",
   "to@example.com"
 );
 
 const slackChannel = new notifications.SlackNotificationChannel(
-  "Agent description",
-  "xoxb-your-slack-bot-token",
-  "#your-channel"
+  "<agent_description>",
+  "<slack_bot_token>",
+  "#<your-channel>"
 );
 ```
 

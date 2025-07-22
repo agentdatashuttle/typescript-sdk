@@ -27,7 +27,12 @@ export class ADSSubscriberN8N {
 
     // Setup ADS Event job processing queue
     this.bullJobQueue = Bull("ads_subscriber_job_processing_queue", {
-      redis: { host: redisParams.host, port: redisParams.port },
+      redis: {
+        host: redisParams.host,
+        port: redisParams.port,
+        username: redisParams.username,
+        password: redisParams.password,
+      },
     });
 
     // Setup event on SIGINT to stop subscriber
