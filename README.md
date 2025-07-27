@@ -362,6 +362,6 @@ This project is licensed under the [Apache License 2.0](https://www.apache.org/l
 ## Contact
 
 For questions or support, please contact
-<br>[agentdatashuttle@knowyours.co](mailto:agentdatashuttle@knowyours.co) or [sudhay2001@gmail.com](mailto:sudhay2001@gmail.com)
+<br>[agentdatashuttle@knowyours.co](mailto:agentdatashuttle@knowyours.co)
 
 For more information about Agent Data Shuttle - https://agentdatashuttle.knowyours.co
